@@ -1,0 +1,28 @@
+{
+  "name": "sathu",
+  "version": "1.0.0",
+  "description": "code challenge",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \" webpack --watch \" \" nodemon server.js\""
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "html-loader": "^0.5.5",
+    "react-router-dom": "^4.3.1",
+    "webpack-command": "^0.4.1"
+  },
+  "dependencies": {
+    "babel-preset-es2015": "^6.24.1",
+    "express": "^4.16.3",
+    "lodash": "^4.17.10"
+  }
+}
