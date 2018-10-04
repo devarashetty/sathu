@@ -12,8 +12,6 @@ export default  class UI extends React.Component {
 
   render () {
     const {filteredData=[],handleFilterUpdate, filterOptions} = this.props 
-    console.log('handleFilterUpdate',handleFilterUpdate)
-    console.log('filterOptions',filterOptions)
     return (
       <Router >
         <div>

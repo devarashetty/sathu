@@ -1,40 +1,21 @@
 import React from 'react'
 import $ from "jquery";
+import ReactPlayer from 'react-player'
+import moment from 'moment'
+import {Doughnut} from 'react-chartjs-2'
+import {
+  colorEmojiMap
+} from '../constants'
 
 class AffectView extends React.Component {
   constructor(){
     super()
   }
 
-  onClickEvent = ()=>{
-    console.log("logs")
-    if (this.detector && !this.detector.isRunning) {
-      $("#logs").html("");
-      this.detector.start();
-    }
-    console.log('#logs', "Clicked the start button");
-  }
-  
-  onStopEvent = ()=> {
-    if (this.detector && this.detector.isRunning) {
-      this.detector.removeEventListener();
-      this.detector.stop();
-    }
-  }
-
-  onResetEvent = () => {
-    console.log('#logs', "Clicked the reset button");
-    if (this.detector && this.detector.isRunning) {
-      this.detector.reset();
-
-      $('#results').html("");
-    }
-  }
-
   componentDidMount(){
-    console.log('$',$)
+    let self = this;
     if($){
-      var divRoot = $("#affdex_elements")[0];
+      var divRoot = $("#webcamFaceDetector")[0];
       var width = 640;
       var height = 480;
       var faceMode = affdex.FaceDetectorMode.LARGE_FACES;
@@ -54,13 +35,9 @@ class AffectView extends React.Component {
       detector.addEventListener("onInitializeSuccess", function() {
         console.log('#logs', "The detector reports initialized");
         //Display canvas instead of video feed because we want to draw the feature points on it
-        $("#face_video_canvas").css("display", "block");
+        $("#face_video_canvas").css("display", "none");
         $("#face_video").css("display", "none");
-      });
-
-      function log(node_name, msg) {
-        $(node_name).append("<span>" + msg + "</span><br />")
-      }
+      })
 
       //function executes when Start button is pushed.
       function onStart() {
@@ -85,29 +62,40 @@ class AffectView extends React.Component {
 
       //Add a callback to notify when detector is stopped
       detector.addEventListener("onStopSuccess", function() {
-        $("#results").html("");
+        console.log(self.emotions)
       });
 
       //Add a callback to receive the results from processing an image.
       //The faces object contains the list of the faces detected in an image.
       //Faces object contains probabilities for all the different expressions, emotions and appearance metrics
       detector.addEventListener("onImageResultsSuccess", function(faces, image, timestamp) {
-        $('#results').html("");
-        console.log('#results', "Timestamp: " + timestamp.toFixed(2));
-        console.log('#results', "Number of faces found: " + faces.length);
+        
         if (faces.length > 0) {
-          console.log('#results', "Appearance: " + JSON.stringify(faces[0].appearance));
-          console.log('#results', "Emotions: " + JSON.stringify(faces[0].emotions, function(key, val) {
+          self.appearances = JSON.stringify(faces[0].appearance);
+          
+          // console.log('#results', "Appearance: " + self.appearances)
+
+          self.emotions = JSON.stringify(faces[0].emotions, function(key, val) {
             return val.toFixed ? Number(val.toFixed(0)) : val;
-          }));
-          console.log('#results', "Expressions: " + JSON.stringify(faces[0].expressions, function(key, val) {
+          })
+          console.log('#results', "Emotions: " + self.emotions)
+
+          self.expressions = JSON.stringify(faces[0].expressions, function(key, val) {
             return val.toFixed ? Number(val.toFixed(0)) : val;
-          }));
-          console.log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
+          })
+
+          // console.log('#results', "Expressions: " + self.expressions)
+
+          // console.log('#results', "Emoji: " + faces[0].emojis.dominantEmoji)
+
           if($('#face_video_canvas')[0] != null)
             drawFeaturePoints(image, faces[0].featurePoints);
+
+          if(Number(timestamp.toFixed(2))%2){
+            self.forceUpdate()
+          }
         }
-      });
+      })
 
       //Draw the detected facial feature points on the image
       function drawFeaturePoints(img, featurePoints) {
@@ -130,27 +118,85 @@ class AffectView extends React.Component {
     }
   }
 
+  _onPlay = ()=>{
+    console.log('playing');
+    this._onWebcamStart();
+  }
+    
+  _onProgress = () => {
+    console.log("progress ",moment().toDate())
+  }
+
+  _onPause = () => {
+    console.log("OnPauser");
+    this._onWebcamStop();
+  }
+
+  _onWebcamStart = ()=>{
+    console.log("logs")
+    if (this.detector && !this.detector.isRunning) {
+      $("#logs").html("");
+      this.detector.start();
+    }
+    console.log('#logs', "Clicked the start button");
+  }
+  
+  _onWebcamStop = ()=> {
+    if (this.detector && this.detector.isRunning) {
+      this.detector.removeEventListener();
+      this.detector.stop();
+    }
+  }
+
+  _onWebcamReset = () => {
+    console.log('#logs', "Clicked the reset button");
+    if (this.detector && this.detector.isRunning) {
+      this.detector.reset();
+
+      $('#results').html("");
+    }
+  }
+
   render () {
+    console.log('this.emotions',this.emotions, typeof(this.emotions))
+    
+    if(typeof(this.emotions) === 'string')
+      this.emotions = JSON.parse(this.emotions)
+    
+    const emojiValues = Object.keys(colorEmojiMap).map((exp)=>{ 
+                          console.log("Expressions",exp);
+                          return this.emotions && this.emotions[exp] || null
+                        })
+    const data = {
+      labels:Object.keys(colorEmojiMap),
+      datasets: [{
+        data: emojiValues,
+        backgroundColor: Object.values(colorEmojiMap),
+        hoverBackgroundColor: [
+        '#FF6384',
+        '#36A2EB',
+        '#FFCE56'
+        ]
+      }]
+    }
     return (
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-8" id="affdex_elements" style={{"width":"680px",height:"480px"}}></div>
-          <div class="col-md-4">
-            <div style={{height:"25em"}}>
-              <strong>EMOTION TRACKING RESULTS</strong>
-              <div id="results" style={{"wordWrap":"break-word"}}></div>
-            </div>
-            <div>
-              <strong>DETECTOR LOG MSGS</strong>
-            </div>
-            <div id="logs"></div>
-          </div>
-        </div>
-        <div>
-          <button id="start" onClick={this.onClickEvent}>Start</button>
-          <button id="stop" onClick={this.onStopEvent}>Stop</button>
-          <button id="reset" onClick={this.onResetEvent}>Reset</button>
-        </div>
+      <div className='page d-flex align-items-center flex-row'>
+          <ReactPlayer 
+            url='https://www.youtube.com/watch?v=ysz5S6PUM-U' 
+            progressInterval = {5000}
+            controls 
+            onPlay= {this._onPlay }
+            onProgress = {this._onProgress}
+            onPause = {this._onPause }
+          />
+          <div>
+            <header className='text-center'> Emotion chart </header>
+            <Doughnut
+              data={data}
+              height = {'250px'}
+              width = {'500px'}
+            />
+          </div> 
       </div>
     )
   }

@@ -1,5 +1,8 @@
 import React from 'react'
 import $ from "jquery";
+import { Player } from 'video-react';
+import ReactPlayer from 'react-player'
+import moment from 'moment'
 
 class AffectView extends React.Component {
   constructor(){
@@ -9,7 +12,6 @@ class AffectView extends React.Component {
   onClickEvent = ()=>{
     console.log("logs")
     if (this.detector && !this.detector.isRunning) {
-      $("#logs").html("");
       this.detector.start();
     }
     console.log('#logs', "Clicked the start button");
@@ -27,12 +29,20 @@ class AffectView extends React.Component {
     if (this.detector && this.detector.isRunning) {
       this.detector.reset();
 
-      $('#results').html("");
     }
   }
 
+  onPlayerReady = (event)=>{
+    event.target.playVideo();
+  }
+
+  onPlayerStateChange = (event) => {
+    if (event.data == YT.PlayerState.PLAYING && !done) {
+      setTimeout(stopVideo, 6000);
+      done = true;
+    }
+  }
   componentDidMount(){
-    console.log('$',$)
     if($){
       var divRoot = $("#affdex_elements")[0];
       var width = 640;
@@ -65,7 +75,6 @@ class AffectView extends React.Component {
       //function executes when Start button is pushed.
       function onStart() {
         if (detector && !detector.isRunning) {
-          $("#logs").html("");
           detector.start();
         }
         console.log('#logs', "Clicked the start button");
@@ -85,7 +94,6 @@ class AffectView extends React.Component {
 
       //Add a callback to notify when detector is stopped
       detector.addEventListener("onStopSuccess", function() {
-        $("#results").html("");
       });
 
       //Add a callback to receive the results from processing an image.
@@ -93,17 +101,17 @@ class AffectView extends React.Component {
       //Faces object contains probabilities for all the different expressions, emotions and appearance metrics
       detector.addEventListener("onImageResultsSuccess", function(faces, image, timestamp) {
         $('#results').html("");
-        console.log('#results', "Timestamp: " + timestamp.toFixed(2));
-        console.log('#results', "Number of faces found: " + faces.length);
+        log('#results', "Timestamp: " + timestamp.toFixed(2));
+        log('#results', "Number of faces found: " + faces.length);
         if (faces.length > 0) {
-          console.log('#results', "Appearance: " + JSON.stringify(faces[0].appearance));
-          console.log('#results', "Emotions: " + JSON.stringify(faces[0].emotions, function(key, val) {
+          log('#results', "Appearance: " + JSON.stringify(faces[0].appearance));
+          log('#results', "Emotions: " + JSON.stringify(faces[0].emotions, function(key, val) {
             return val.toFixed ? Number(val.toFixed(0)) : val;
           }));
-          console.log('#results', "Expressions: " + JSON.stringify(faces[0].expressions, function(key, val) {
+          log('#results', "Expressions: " + JSON.stringify(faces[0].expressions, function(key, val) {
             return val.toFixed ? Number(val.toFixed(0)) : val;
           }));
-          console.log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
+          log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
           if($('#face_video_canvas')[0] != null)
             drawFeaturePoints(image, faces[0].featurePoints);
         }
@@ -126,31 +134,35 @@ class AffectView extends React.Component {
 
         }
       }
-
     }
   }
 
+  _onPlay = ()=>{
+    console.log('playing')
+  }
+    
+  _onProgress = () => {
+    console.log("progress ",moment().toDate())
+  }
+
   render () {
+    const opts = {
+      height: '390',
+      width: '640',
+      playerVars: { // https://developers.google.com/youtube/player_parameters
+        autoplay: 1
+      }
+    }
+    
     return (
       <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-8" id="affdex_elements" style={{"width":"680px",height:"480px"}}></div>
-          <div class="col-md-4">
-            <div style={{height:"25em"}}>
-              <strong>EMOTION TRACKING RESULTS</strong>
-              <div id="results" style={{"wordWrap":"break-word"}}></div>
-            </div>
-            <div>
-              <strong>DETECTOR LOG MSGS</strong>
-            </div>
-            <div id="logs"></div>
-          </div>
-        </div>
-        <div>
-          <button id="start" onClick={this.onClickEvent}>Start</button>
-          <button id="stop" onClick={this.onStopEvent}>Stop</button>
-          <button id="reset" onClick={this.onResetEvent}>Reset</button>
-        </div>
+        <ReactPlayer 
+          url='https://www.youtube.com/watch?v=ysz5S6PUM-U' 
+          progressInterval = {5000}
+          controls 
+          onPlay= {this._onPlay}
+          onProgress = {this._onProgress}
+        />
       </div>
     )
   }
