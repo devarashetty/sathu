@@ -50,7 +50,7 @@ class ManuComponent extends React.Component {
 
   captureFront = () => {
     console.log("captureFront");
-    this.idSDK.default.captureDocumentFront();
+    this.idSDK.default.captureDocumentFront(false, myCallBackFunction);
   }
 
   captureBack = () => {
